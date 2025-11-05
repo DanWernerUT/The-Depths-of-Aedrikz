@@ -4,17 +4,26 @@ public class FollowPlayer : MonoBehaviour
 {
     public GameObject player;
     public Vector3 offset = new Vector3(0, 10, -20);
-    private float forwardInput;
+    public float rotationSpeed = 3f;
 
-    void Start()
-    {
-
-    }
+    private float yaw;
+    private float pitch;
 
     void LateUpdate()
     {
-        forwardInput = Input.GetAxis("Vertical");
-        transform.position = player.transform.position + player.transform.rotation * offset;
-        transform.LookAt(player.transform.position + new Vector3(0, 1, 0) * 2f);
+        if (player == null) return;
+
+        if (Input.GetMouseButton(1)) // right mouse held
+        {
+            yaw += Input.GetAxis("Mouse X") * rotationSpeed;
+            pitch -= Input.GetAxis("Mouse Y") * rotationSpeed;
+            pitch = Mathf.Clamp(pitch, -30f, 60f);
+        }
+
+        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
+        Vector3 targetPos = player.transform.position + rotation * offset;
+
+        transform.position = targetPos;
+        transform.LookAt(player.transform.position + Vector3.up * 2f);
     }
 }
