@@ -5,7 +5,7 @@ public class ReloadButton : MonoBehaviour
 {
     [SerializeField] private RoomPathGenerator generator;
     [SerializeField] private Button reloadButton;
-
+    public int seed = 1;
     [Header("Optional: Key to reload")]
     [SerializeField] private KeyCode reloadKey = KeyCode.R;
     [SerializeField] private bool enableKeyboardShortcut = true;
@@ -54,7 +54,7 @@ public class ReloadButton : MonoBehaviour
         if (generator != null)
         {
             Debug.Log("[ReloadButton] Regenerating dungeon...");
-            generator.GenerateWithSeed(1);
+            generator.GenerateWithSeed(seed);
         }
     }
 }

@@ -1,6 +1,7 @@
-using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+using static RoomPathGenerator;
 
 public class RoomPathGenerator : MonoBehaviour
 {
@@ -478,13 +479,31 @@ public class RoomPathGenerator : MonoBehaviour
 
         // Scale the room to match the grid size
         // Note: This assumes room prefabs are designed to scale uniformly
-        Vector3 targetScale = new Vector3(
-            roomPrefab.size.x * tileSize,
-            instance.transform.localScale.y,
-            roomPrefab.size.y * tileSize
-        );
-        instance.transform.localScale = targetScale;
-
+        if (roomPrefab.size.x != 1 && roomPrefab.size.y != 1) {
+            Vector3 targetScale = new Vector3(
+                roomPrefab.size.x * tileSize,
+                instance.transform.localScale.y,
+                roomPrefab.size.y * tileSize
+            );
+            instance.transform.localScale = targetScale;
+        }
+        if (roomPrefab.size.x == 1 && roomPrefab.size.y != 1)
+        {
+            Vector3 targetScale = new Vector3(
+                instance.transform.localScale.y,
+                roomPrefab.size.y * tileSize
+            );
+            instance.transform.localScale = targetScale;
+        }
+        if (roomPrefab.size.x != 1 && roomPrefab.size.y == 1)
+        {
+            Vector3 targetScale = new Vector3(
+                roomPrefab.size.x * tileSize,
+                instance.transform.localScale.y,
+                roomPrefab.size.y
+            );
+            instance.transform.localScale = targetScale;
+        }
         placedRooms.Add(new PlacedRoom(position, roomPrefab.size, instance, roomPrefab.singleConnectionOnly, roomPrefab.connectToEdge, roomPrefab.edgeDirection));
     }
 
@@ -910,12 +929,33 @@ public class RoomPathGenerator : MonoBehaviour
 
         // Build spatial grid after all objects are instantiated
         BuildSpatialGrid();
+        //ClearAllDots();
 
         lastGenerationStats.generationTime = Time.realtimeSinceStartup - startTime;
 
-        Debug.Log($"[RoomPathGenerator] Generation complete - {lastGenerationStats}");
+        Debug.Log($"[RoomPathGenerator] Generation complete: {lastGenerationStats}");
     }
+    public void ClearAllDots()
+    {
+        foreach (var dot in spawnedDots)
+        {
+            if (dot != null)
+                Destroy(dot);
+        }
+        spawnedDots.Clear();
 
+        // Update spatial grid to remove dot references
+        if (spatialGrid != null)
+        {
+            foreach (var cell in spatialGrid.Values)
+            {
+                cell.RemoveAll(obj => obj == null);
+            }
+        }
+
+        lastGenerationStats.dotsPlaced = 0;
+        Debug.Log("[RoomPathGenerator] All dots cleared");
+    }
     private void ClearExistingObjects()
     {
         for (int i = transform.childCount - 1; i >= 0; i--)

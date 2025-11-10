@@ -4,12 +4,12 @@ public class FollowPlayer : MonoBehaviour
 {
     public GameObject player;
     public Vector3 offset = new Vector3(0, 10, -20);
-    public Vector3 firstPersonOffset = new Vector3(0, 1.6f, 0); // Eye level offset
+    public Vector3 firstPersonOffset = new Vector3(0, 1.6f, 0);
     public float rotationSpeed = 3f;
 
     private float yaw;
     private float pitch;
-    private bool isFirstPerson = false;
+    private bool isFirstPerson = true;
 
     void Start()
     {
@@ -20,14 +20,11 @@ public class FollowPlayer : MonoBehaviour
     {
         if (player == null) return;
 
-        // Toggle between first and third person
-        if (Input.GetKeyDown(KeyCode.F5))
-        {
+        if (Input.GetKeyDown(KeyCode.F5)) {
             isFirstPerson = !isFirstPerson;
         }
 
-        if (Input.GetMouseButton(1)) // right mouse held
-        {
+        if (Input.GetMouseButton(1) || isFirstPerson) {
             yaw += Input.GetAxis("Mouse X") * rotationSpeed;
             pitch -= Input.GetAxis("Mouse Y") * rotationSpeed;
             pitch = Mathf.Clamp(pitch, -30f, 60f);
@@ -35,20 +32,20 @@ public class FollowPlayer : MonoBehaviour
 
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
 
-        if (isFirstPerson)
-        {
-            // First person mode - camera at player's head
-            Vector3 targetPos = player.transform.position + player.transform.rotation * firstPersonOffset;
-            transform.position = targetPos;
-            transform.rotation = rotation;
+        if (isFirstPerson) {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+
+            player.transform.rotation = Quaternion.Euler(0, yaw, 0);
+            transform.position = player.transform.position + player.transform.TransformVector(firstPersonOffset);
+            transform.rotation = Quaternion.Euler(pitch, yaw, 0);
+
+
         }
-        else
-        {
-            // Third person mode - camera behind player
+        else {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
             Vector3 targetPos = player.transform.position + rotation * offset;
             transform.position = targetPos;
             transform.LookAt(player.transform.position + Vector3.up * 2f);
