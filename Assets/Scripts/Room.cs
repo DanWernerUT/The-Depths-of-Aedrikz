@@ -5,7 +5,7 @@ public class Room : MonoBehaviour
     public GameObject northWall, southWall, eastWall, westWall;
     public float detectDistance = 10f;
 
-    void LateUpdate()
+    void Start()
     {
         UpdateWalls();
     }
