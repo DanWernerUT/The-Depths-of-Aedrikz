@@ -875,8 +875,10 @@ public class RoomPathGenerator : MonoBehaviour
 
     private void InstantiateDot(Vector2Int pos)
     {
-        var worldPos = new Vector3(pos.x * tileSize, 1f, pos.y * tileSize);
-        var dot = Instantiate(dotPrefab, worldPos, Quaternion.identity, transform);
+        var worldPos = new Vector3(pos.x * tileSize, 0.5f, pos.y * tileSize);
+        float randomYRotation = Random.Range(0f, 360f);
+        var rotation = Quaternion.Euler(0, randomYRotation, 0);
+        var dot = Instantiate(dotPrefab, worldPos, rotation, transform);
         spawnedDots.Add(dot);
     }
 

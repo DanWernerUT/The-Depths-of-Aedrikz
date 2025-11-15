@@ -718,4 +718,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 0}
-  heightOffset: 0
+  heightOffset: -6

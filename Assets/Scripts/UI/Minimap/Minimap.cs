@@ -16,7 +16,6 @@ public class Minimap : MonoBehaviour
     void Start()
     {
         cam = GetComponent<Camera>();
-        UpdateViewport();
     }
 
     void LateUpdate()
@@ -39,10 +38,8 @@ public class Minimap : MonoBehaviour
     {
         if (mapIsMini)
         {
-            // Determine square size normalized to screen
             float pixelSize = miniMapSizePixels;
             float normalizedSize = pixelSize / Mathf.Min(Screen.width, Screen.height);
-
             float xNorm = 1f - normalizedSize - (miniMapMargin.x / Screen.width);
             float yNorm = 1f - normalizedSize - (miniMapMargin.y / Screen.height);
 
@@ -54,7 +51,6 @@ public class Minimap : MonoBehaviour
         }
     }
 
-    // Disable shadows for this camera only
     void OnEnable()
     {
         cam.SetReplacementShader(Shader.Find("Unlit/Texture"), null);
