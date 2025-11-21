@@ -4,18 +4,22 @@ using UnityEngine;
 public class Minimap : MonoBehaviour
 {
     public Transform player;
+    public Camera minimapCam;
     public float height = 50f;
-
+    public float rotation = 90f;
     [Header("Mini View Settings")]
     public float miniMapSizePixels = 200f;
     public Vector2 miniMapMargin = new Vector2(20, 20);
 
     private Camera cam;
     private bool mapIsMini = true;
+    public Shader unlitShader;
 
     void Start()
     {
         cam = GetComponent<Camera>();
+        if (unlitShader != null)
+            cam.SetReplacementShader(unlitShader, "");
     }
 
     void LateUpdate()
@@ -25,7 +29,7 @@ public class Minimap : MonoBehaviour
         Vector3 pos = player.position;
         pos.y += height;
         transform.position = pos;
-        transform.rotation = Quaternion.Euler(90f, player.eulerAngles.y, 0f);
+        transform.rotation = Quaternion.Euler(rotation, player.eulerAngles.y+180, 0f);
 
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -49,10 +53,5 @@ public class Minimap : MonoBehaviour
         {
             cam.rect = new Rect(0f, 0f, 1f, 1f);
         }
-    }
-
-    void OnEnable()
-    {
-        cam.SetReplacementShader(Shader.Find("Unlit/Texture"), null);
     }
 }

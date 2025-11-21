@@ -1,67 +1,47 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
-    public float moveSpeed = 10f;
+    public float moveSpeed = 6f;
     public float jumpForce = 7f;
-    public float acceleration = 10f;
-    public float maxVelocity = 10f;
-    public float rotationSpeed = 3f;
+    public float mouseSensitivity = 500f;
 
     private Rigidbody rb;
-    private bool isGrounded = true;
-    private Vector3 moveInput;
+    private float yaw;
 
-    void Start()
+    private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true;
+        rb.freezeRotation = true;                 // Prevent tilt
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
-    void Update()
+    private void Update()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        // Yaw rotation
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        yaw += mouseX;
+        transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
-        // Movement direction relative to player facing
-        moveInput = (transform.forward * vertical + transform.right * horizontal).normalized;
-
-        // Rotate player with mouse when right button held
-        if (Input.GetMouseButton(1))
+        // Jump only when grounded
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
-            transform.Rotate(Vector3.up * mouseX);
-        }
-
-        // Jump
-        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
-        {
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            isGrounded = false;
+            // grounded check = vertical velocity ~= 0
+            if (Mathf.Abs(rb.linearVelocity.y) < 0.001f)
+                rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        Vector3 targetVelocity = moveInput * moveSpeed;
-        Vector3 velocityChange = targetVelocity - new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
-        velocityChange = Vector3.ClampMagnitude(velocityChange, acceleration * Time.fixedDeltaTime);
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
 
-        rb.AddForce(velocityChange, ForceMode.VelocityChange);
+        Vector3 move = (transform.forward * v + transform.right * h).normalized;
+        
+        Vector3 vel = rb.linearVelocity;
+        Vector3 horizontalVel = move * moveSpeed;
 
-        // Cap horizontal velocity
-        Vector3 horizontalVel = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
-        if (horizontalVel.magnitude > maxVelocity)
-        {
-            horizontalVel = horizontalVel.normalized * maxVelocity;
-            rb.linearVelocity = new Vector3(horizontalVel.x, rb.linearVelocity.y, horizontalVel.z);
-        }
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        if (collision.contacts.Length > 0 && collision.contacts[0].normal.y > 0.5f)
-            isGrounded = true;
+        rb.linearVelocity = new Vector3(horizontalVel.x, vel.y, horizontalVel.z);
     }
 }

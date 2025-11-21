@@ -9,7 +9,7 @@ public class PlayerStats : MonoBehaviour
     public float currentMana;
     public Slider healthBar;
     public Slider manaBar;
-
+    [SerializeField] private AudioClip damageSoundClip;
     void Start()
     {
         ResetHealth();
@@ -32,10 +32,11 @@ public class PlayerStats : MonoBehaviour
         Debug.Log($"[Mana Reset] Mana = {currentMana}/{maxMana}");
     }
 
-    public void LooseHealth(float amount)
+    public void LoseHealth(float amount)
     {
         currentHealth = Mathf.Clamp(currentHealth - amount, 0, maxHealth);
         healthBar.value = currentHealth;
+        SoundFXManager.instance.PlaySoundFXClip(damageSoundClip, transform, 1f);
         Debug.Log($"[Lose Health] -{amount} ? {currentHealth}/{maxHealth}");
     }
 

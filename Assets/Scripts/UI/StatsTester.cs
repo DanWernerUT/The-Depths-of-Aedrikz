@@ -15,7 +15,7 @@ public class PlayerStatsTester : MonoBehaviour
     {
         resetHealthBtn.onClick.AddListener(player.ResetHealth);
         resetManaBtn.onClick.AddListener(player.ResetMana);
-        loseHealthBtn.onClick.AddListener(() => player.LooseHealth(10f));
+        loseHealthBtn.onClick.AddListener(() => player.LoseHealth(10f));
         gainHealthBtn.onClick.AddListener(() => player.GainHealth(10f));
         spendManaBtn.onClick.AddListener(() => player.SpendMana(10f));
         gainManaBtn.onClick.AddListener(() => player.GainMana(10f));

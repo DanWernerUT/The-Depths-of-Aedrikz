@@ -12450,7 +12450,7 @@ ParticleSystem:
     strength:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1
+      scalar: 0.5
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -12607,8 +12607,8 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     separateAxes: 0
-    frequency: 0.5
-    damping: 1
+    frequency: 0.9
+    damping: 0
     octaves: 1
     octaveMultiplier: 0.5
     octaveScale: 2
@@ -14754,6 +14754,7 @@ GameObject:
   - component: {fileID: 224381402167365077}
   - component: {fileID: 7955780803206943709}
   - component: {fileID: 5777197661733546914}
+  - component: {fileID: 5456580259396004454}
   m_Layer: 0
   m_Name: FirepitRocks
   m_TagString: Untagged
@@ -14829,6 +14830,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &5456580259396004454
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6050955070208322423}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 825146152020747216, guid: 89ca3740a15f7114e9c1ce977aac2398, type: 3}
 --- !u!1 &8431907838444036292
 GameObject:
   m_ObjectHideFlags: 0
@@ -14840,6 +14863,7 @@ GameObject:
   - component: {fileID: 2367100516261838653}
   - component: {fileID: 4054636033571378115}
   - component: {fileID: 2809449282112123146}
+  - component: {fileID: 484525741531584129}
   m_Layer: 0
   m_Name: FirepitWood
   m_TagString: Untagged
@@ -14915,6 +14939,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &484525741531584129
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8431907838444036292}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -8431727409586174529, guid: 89ca3740a15f7114e9c1ce977aac2398, type: 3}
 --- !u!1 &8980462715160313672
 GameObject:
   m_ObjectHideFlags: 0
