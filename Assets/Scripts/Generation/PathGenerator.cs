@@ -261,16 +261,15 @@ public class RoomPathGenerator : MonoBehaviour
     {
         spatialGrid = new Dictionary<Vector2Int, List<GameObject>>();
 
-        // Add all rooms to spatial grid - rooms need to be in ALL cells they occupy
         foreach (var room in placedRooms)
         {
             if (room.instance == null) continue;
 
-            // Calculate world bounds based on grid position and size
+            // Calculate world bounds - centered tiles
             Vector3 roomWorldMin = new Vector3(
-                room.position.x * tileSize - (tileSize / 2),
+                room.position.x * tileSize,
                 0,
-                room.position.y * tileSize - (tileSize / 2)
+                room.position.y * tileSize
             );
             Vector3 roomWorldMax = new Vector3(
                 (room.position.x + room.size.x) * tileSize,
@@ -278,11 +277,9 @@ public class RoomPathGenerator : MonoBehaviour
                 (room.position.y + room.size.y) * tileSize
             );
 
-            // Get grid cells for min and max corners
             Vector2Int minCell = WorldToGridCell(roomWorldMin);
             Vector2Int maxCell = WorldToGridCell(roomWorldMax);
 
-            // Add room to all cells it occupies
             for (int x = minCell.x; x <= maxCell.x; x++)
             {
                 for (int z = minCell.y; z <= maxCell.y; z++)
@@ -292,7 +289,6 @@ public class RoomPathGenerator : MonoBehaviour
             }
         }
 
-        // Add all corridors to spatial grid
         foreach (var corridor in spawnedCorridors)
         {
             if (corridor == null) continue;
@@ -300,7 +296,6 @@ public class RoomPathGenerator : MonoBehaviour
             AddToSpatialGrid(cell, corridor);
         }
 
-        // Add all dots to spatial grid
         foreach (var dot in spawnedDots)
         {
             if (dot == null) continue;
@@ -468,18 +463,19 @@ public class RoomPathGenerator : MonoBehaviour
             for (int y = position.y; y < position.y + roomPrefab.size.y; y++)
                 board[x, y] = ++stepCounter;
 
-        // Calculate world position - place at CENTER of the room area
+        // Calculate world position - align to grid consistently
+        // Place at corner, then offset by half the room size
         Vector3 worldPos = new Vector3(
-            (position.x + roomPrefab.size.x / 2f) * tileSize - (tileSize / 2),
+            position.x * tileSize + (roomPrefab.size.x * tileSize) / 2f,
             0,
-            (position.y + roomPrefab.size.y / 2f) * tileSize - (tileSize / 2)
+            position.y * tileSize + (roomPrefab.size.y * tileSize) / 2f
         );
 
         var instance = Instantiate(roomPrefab.prefab, worldPos, Quaternion.identity, transform);
 
         // Scale the room to match the grid size
-        // Note: This assumes room prefabs are designed to scale uniformly
-        if (roomPrefab.size.x != 1 && roomPrefab.size.y != 1) {
+        if (roomPrefab.size.x != 1 || roomPrefab.size.y != 1)
+        {
             Vector3 targetScale = new Vector3(
                 roomPrefab.size.x * tileSize,
                 instance.transform.localScale.y,
@@ -487,24 +483,9 @@ public class RoomPathGenerator : MonoBehaviour
             );
             instance.transform.localScale = targetScale;
         }
-        if (roomPrefab.size.x == 1 && roomPrefab.size.y != 1)
-        {
-            Vector3 targetScale = new Vector3(
-                instance.transform.localScale.y,
-                roomPrefab.size.y * tileSize
-            );
-            instance.transform.localScale = targetScale;
-        }
-        if (roomPrefab.size.x != 1 && roomPrefab.size.y == 1)
-        {
-            Vector3 targetScale = new Vector3(
-                roomPrefab.size.x * tileSize,
-                instance.transform.localScale.y,
-                roomPrefab.size.y
-            );
-            instance.transform.localScale = targetScale;
-        }
-        placedRooms.Add(new PlacedRoom(position, roomPrefab.size, instance, roomPrefab.singleConnectionOnly, roomPrefab.connectToEdge, roomPrefab.edgeDirection));
+        
+        placedRooms.Add(new PlacedRoom(position, roomPrefab.size, instance, 
+            roomPrefab.singleConnectionOnly, roomPrefab.connectToEdge, roomPrefab.edgeDirection));
     }
 
     private Vector2Int GetClosestEdgePoint(PlacedRoom room, Vector2Int target)
@@ -831,7 +812,12 @@ public class RoomPathGenerator : MonoBehaviour
                 bool isInRoom = IsPointInAnyRoom(new Vector2Int(x, y));
                 if (board[x, y] > 0 && !isInRoom)
                 {
-                    var pos = new Vector3(x * tileSize, 0, y * tileSize);
+                    // Match room positioning: center of tile
+                    var pos = new Vector3(
+                        x * tileSize + tileSize / 2f, 
+                        0, 
+                        y * tileSize + tileSize / 2f
+                    );
                     var corridor = Instantiate(corridorTilePrefab, pos, Quaternion.identity, transform);
                     spawnedCorridors.Add(corridor);
                     corridorCount++;
@@ -875,7 +861,12 @@ public class RoomPathGenerator : MonoBehaviour
 
     private void InstantiateDot(Vector2Int pos)
     {
-        var worldPos = new Vector3(pos.x * tileSize, 0.5f, pos.y * tileSize);
+        // Match tile positioning
+        var worldPos = new Vector3(
+            pos.x * tileSize + tileSize / 2f, 
+            0.5f, 
+            pos.y * tileSize + tileSize / 2f
+        );
         float randomYRotation = Random.Range(0f, 360f);
         var rotation = Quaternion.Euler(0, randomYRotation, 0);
         var dot = Instantiate(dotPrefab, worldPos, rotation, transform);
@@ -931,7 +922,7 @@ public class RoomPathGenerator : MonoBehaviour
 
         // Build spatial grid after all objects are instantiated
         BuildSpatialGrid();
-        //ClearAllDots();
+        ClearAllDots();
 
         lastGenerationStats.generationTime = Time.realtimeSinceStartup - startTime;
 
@@ -1003,6 +994,7 @@ public class RoomPathGenerator : MonoBehaviour
             Gizmos.DrawLine(start, end);
         }
         */
+        
         // Draw room bounds
         Gizmos.color = Color.green;
         foreach (var room in placedRooms)

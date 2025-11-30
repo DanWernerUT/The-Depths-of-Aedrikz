@@ -2,24 +2,34 @@ using UnityEngine;
 
 public class ToggleUI : MonoBehaviour
 {
-    // Assign the UI GameObject (like a Panel) in the Inspector
     public GameObject uiElement;
 
     private void Start()
     {
-        // Ensure the UI is invisible at the start
-        if (uiElement != null)
-            uiElement.SetActive(false);
+        uiElement.SetActive(false);
+        GameState.paused = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (uiElement != null)
+            bool newState = !uiElement.activeSelf;
+            uiElement.SetActive(newState);
+
+            GameState.paused = newState;
+
+            if (newState)
             {
-                // Toggle the UI element's active state
-                uiElement.SetActive(!uiElement.activeSelf);
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
         }
     }

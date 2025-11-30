@@ -5,7 +5,7 @@ public class CameraController : MonoBehaviour
     public Transform player;
 
     [Header("Settings")]
-    public float mouseSensitivity = 500f;
+    private float mouseSensitivity => SensitivitySettings.sensitivity;
 
     [Header("Camera Modes")]
     public bool firstPerson = true;
@@ -25,7 +25,9 @@ public class CameraController : MonoBehaviour
 
     void LateUpdate()
     {
-        // Vertical look only
+        if (GameState.paused)
+            return; // no camera movement
+
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, -60f, 80f);
