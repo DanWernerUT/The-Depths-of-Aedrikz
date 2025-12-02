@@ -37,7 +37,6 @@ public class RoomPathGenerator : MonoBehaviour
         public int corridorTilesCreated;
         public int dotsPlaced;
         public float generationTime;
-
         public override string ToString()
         {
             return $"Rooms: {roomsPlaced} (Guaranteed: {guaranteedRoomsPlaced}), Corridors: {corridorTilesCreated}, Dots: {dotsPlaced}, Time: {generationTime:F3}s";
@@ -62,11 +61,10 @@ public class RoomPathGenerator : MonoBehaviour
     [SerializeField] private float variation = 0.5f;
     [SerializeField] private int minRoomSpacing = 2;
     [SerializeField] private bool showDebugGrid = true;
+    [SerializeField] public float activeRadius;
 
     [Header("Optimization")]
     [SerializeField] private Transform player;
-    [SerializeField] private float activeRadius = 100f;
-    [SerializeField] private float updateInterval = 0.5f;
 
     [Header("Statistics")]
     [SerializeField] private GenerationStats lastGenerationStats;
@@ -75,11 +73,9 @@ public class RoomPathGenerator : MonoBehaviour
     private List<PlacedRoom> placedRooms = new List<PlacedRoom>();
     private List<GameObject> spawnedCorridors = new List<GameObject>();
     private List<GameObject> spawnedDots = new List<GameObject>();
-    private float updateTimer;
     private int stepCounter;
 
     // Spatial optimization fields
-    private float sqrActiveRadius;
     private Dictionary<Vector2Int, List<GameObject>> spatialGrid;
     private const int GRID_CELL_SIZE = 50;
 
@@ -195,50 +191,7 @@ public class RoomPathGenerator : MonoBehaviour
     {
         if (seed != 0)
             Random.InitState(seed);
-
-        // Cache squared radius to avoid sqrt calculations
-        sqrActiveRadius = activeRadius * activeRadius;
-
         GenerateWithSeed();
-    }
-
-    private void Update()
-    {
-        if (player == null || spatialGrid == null) return;
-
-        updateTimer += Time.deltaTime;
-        if (updateTimer < updateInterval) return;
-        updateTimer = 0f;
-
-        Vector3 playerPos = player.position;
-        Vector2Int playerCell = WorldToGridCell(playerPos);
-
-        // Calculate which cells to check based on active radius
-        int cellRadius = Mathf.CeilToInt(activeRadius / GRID_CELL_SIZE);
-
-        // Check objects only in nearby cells
-        for (int x = -cellRadius; x <= cellRadius; x++)
-        {
-            for (int z = -cellRadius; z <= cellRadius; z++)
-            {
-                Vector2Int cell = new Vector2Int(playerCell.x + x, playerCell.y + z);
-
-                if (!spatialGrid.ContainsKey(cell)) continue;
-
-                foreach (var obj in spatialGrid[cell])
-                {
-                    if (obj == null) continue;
-
-                    // Use squared distance to avoid expensive sqrt
-                    Vector3 offset = obj.transform.position - playerPos;
-                    float sqrDist = offset.sqrMagnitude;
-                    bool shouldBeActive = sqrDist < sqrActiveRadius;
-
-                    if (obj.activeSelf != shouldBeActive)
-                        obj.SetActive(shouldBeActive);
-                }
-            }
-        }
     }
 
     private Vector2Int WorldToGridCell(Vector3 worldPos)
@@ -663,6 +616,9 @@ public class RoomPathGenerator : MonoBehaviour
                 // by temporarily ignoring single-connection restrictions
                 Debug.LogWarning("[RoomPathGenerator] Some rooms with single-connection restriction may receive multiple connections to ensure all rooms are connected.");
 
+                // Reset min for the forced connection search
+                min = float.MaxValue;
+                
                 foreach (var c in connected)
                 {
                     foreach (var u in unconnected)
@@ -672,9 +628,14 @@ public class RoomPathGenerator : MonoBehaviour
                     }
                 }
 
-                if (closest == null) break;
+                if (closest == null)
+                {
+                    Debug.LogError("[RoomPathGenerator] Failed to connect all rooms! Some rooms may be unreachable.");
+                    break;
+                }
             }
 
+            // Connect the rooms
             ConnectRooms(from, closest);
             from.AddConnection();
             closest.AddConnection();
@@ -684,6 +645,12 @@ public class RoomPathGenerator : MonoBehaviour
 
         // After connecting all non-edge-only rooms, create edge connections
         ConnectRoomsToEdges();
+        
+        // Verify all rooms are reachable (optional debug check)
+        if (connected.Count != placedRooms.Count - edgeOnlyRooms.Count)
+        {
+            Debug.LogWarning($"[RoomPathGenerator] Not all rooms connected! Connected: {connected.Count}, Expected: {placedRooms.Count - edgeOnlyRooms.Count}, Edge-only: {edgeOnlyRooms.Count}");
+        }
     }
 
     private void ConnectRoomsToEdges()
@@ -1012,5 +979,10 @@ public class RoomPathGenerator : MonoBehaviour
             Gizmos.DrawLine(min, max);
             Gizmos.DrawLine(new Vector3(min.x, 0, max.z), new Vector3(max.x, 0, min.z));
         }
+    }
+
+    public float GetActiveRadius()
+    {
+        return activeRadius;
     }
 }

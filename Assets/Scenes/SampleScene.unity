@@ -2617,9 +2617,8 @@ MonoBehaviour:
   variation: 400
   minRoomSpacing: 3
   showDebugGrid: 1
+  activeRadius: 250
   player: {fileID: 1422900486}
-  activeRadius: 5000
-  updateInterval: 0.5
   lastGenerationStats:
     roomsPlaced: 0
     guaranteedRoomsPlaced: 0

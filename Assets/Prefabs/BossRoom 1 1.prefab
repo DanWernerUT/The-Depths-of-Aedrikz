@@ -16716,6 +16716,9 @@ MonoBehaviour:
   - {fileID: 4969906153474260267}
   - {fileID: 0}
   detectionRadius: 0.5
+  player: {fileID: 0}
+  activeRadius: 125
+  updateInterval: 0.5
 --- !u!114 &6019415940910691435
 MonoBehaviour:
   m_ObjectHideFlags: 0
