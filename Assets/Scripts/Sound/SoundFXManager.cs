@@ -19,6 +19,11 @@ public class SoundFXManager : MonoBehaviour {
         AudioSource audioSource = Instantiate(soundFXObject, spawnTransform.position, Quaternion.identity);
         audioSource.clip = audioClip;
         audioSource.volume = volume;
+        audioSource.spatialBlend = 1f;
+        audioSource.minDistance = 1f;
+        audioSource.maxDistance = 500f;
+        audioSource.rolloffMode = AudioRolloffMode.Linear;
+
         audioSource.Play();
 
         float clipLength = audioClip.length;

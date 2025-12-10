@@ -18,6 +18,8 @@ public class RoomPathGenerator : MonoBehaviour
         public bool connectToEdge = false;
         [Tooltip("Which edge to connect to (North=top, South=bottom, East=right, West=left). If None, chooses randomly.")]
         public EdgeDirection edgeDirection = EdgeDirection.None;
+        [Tooltip("If true, this room must be placed at least minEdgeDistance tiles from any edge")]
+        public bool isBossRoom = false;
     }
 
     public enum EdgeDirection
@@ -69,6 +71,9 @@ public class RoomPathGenerator : MonoBehaviour
     [Header("Statistics")]
     [SerializeField] private GenerationStats lastGenerationStats;
 
+    [Header("Boss Room Settings")]
+    [SerializeField] private int minBossRoomEdgeDistance = 5;
+
     private int[,] board;
     private List<PlacedRoom> placedRooms = new List<PlacedRoom>();
     private List<GameObject> spawnedCorridors = new List<GameObject>();
@@ -100,8 +105,9 @@ public class RoomPathGenerator : MonoBehaviour
         public int connectionCount;
         public bool connectToEdge;
         public EdgeDirection edgeDirection;
+        public bool isBossRoom;
 
-        public PlacedRoom(Vector2Int pos, Vector2Int sz, GameObject inst, bool singleConn = false, bool connToEdge = false, EdgeDirection edgeDir = EdgeDirection.None)
+        public PlacedRoom(Vector2Int pos, Vector2Int sz, GameObject inst, bool singleConn = false, bool connToEdge = false, EdgeDirection edgeDir = EdgeDirection.None, bool boss = false)
         {
             position = pos;
             size = sz;
@@ -111,6 +117,7 @@ public class RoomPathGenerator : MonoBehaviour
             connectionCount = 0;
             connectToEdge = connToEdge;
             edgeDirection = edgeDir;
+            isBossRoom = boss;
         }
 
         public bool Overlaps(Vector2Int otherPos, Vector2Int otherSize, int spacing)
@@ -185,6 +192,39 @@ public class RoomPathGenerator : MonoBehaviour
 
         if (totalGuaranteedArea > boardArea * 0.5f)
             Debug.LogWarning("[RoomPathGenerator] Guaranteed rooms take up more than 50% of board area - placement may fail!");
+
+        // NEW: Validate boss room can fit
+        for (int i = 0; i < roomPrefabs.Count; i++)
+        {
+            var room = roomPrefabs[i];
+
+            if (room.isBossRoom)
+            {
+                int requiredSpace = (minBossRoomEdgeDistance * 2) + Mathf.Max(room.size.x, room.size.y);
+                if (requiredSpace > boardSize)
+                {
+                    Debug.LogError($"[RoomPathGenerator] Boss room at index {i} cannot fit with edge distance {minBossRoomEdgeDistance}!");
+                }
+            }
+        }
+
+        if (minBossRoomEdgeDistance < 0)
+            Debug.LogError("[RoomPathGenerator] Boss room edge distance must be non-negative!");
+    }
+
+    private bool CanPlaceBossRoom(Vector2Int position, Vector2Int size, int minEdgeDistance)
+    {
+        // Check if room would be too close to any edge
+        if (position.x < minEdgeDistance ||
+            position.y < minEdgeDistance ||
+            position.x + size.x > boardSize - minEdgeDistance ||
+            position.y + size.y > boardSize - minEdgeDistance)
+        {
+            return false;
+        }
+
+        // Check standard placement constraints
+        return CanPlaceRoom(position, size);
     }
 
     private void Start()
@@ -368,29 +408,75 @@ public class RoomPathGenerator : MonoBehaviour
         var guaranteedRoomsToPlace = roomPrefabs.Where(r => r.guaranteedSpawn && r.prefab != null).ToList();
         var guaranteedRoomsPlaced = new HashSet<RoomPrefab>();
 
-        // Place guaranteed rooms first
         foreach (var roomPrefab in guaranteedRoomsToPlace)
         {
             int attempts = 0;
             bool placed = false;
-            while (attempts++ < 100)
+            int maxAttempts = roomPrefab.isBossRoom ? 500 : 100; // More attempts for boss room
+
+            while (attempts++ < maxAttempts)
             {
-                Vector2Int pos = new Vector2Int(
-                    Random.Range(0, boardSize - roomPrefab.size.x),
-                    Random.Range(0, boardSize - roomPrefab.size.y)
-                );
-                if (CanPlaceRoom(pos, roomPrefab.size))
+                Vector2Int pos;
+
+                if (roomPrefab.isBossRoom)
                 {
-                    PlaceRoom(roomPrefab, pos);
-                    guaranteedRoomsPlaced.Add(roomPrefab);
-                    placed = true;
-                    break;
+                    // Boss room: place it near the center of the map so it's visible on minimap
+                    int minPos = minBossRoomEdgeDistance;
+                    int maxPosX = boardSize - roomPrefab.size.x - minBossRoomEdgeDistance;
+                    int maxPosY = boardSize - roomPrefab.size.y - minBossRoomEdgeDistance;
+
+                    if (maxPosX < minPos || maxPosY < minPos)
+                    {
+                        int requiredBoardSize = (minBossRoomEdgeDistance * 2) + Mathf.Max(roomPrefab.size.x, roomPrefab.size.y);
+                        Debug.LogError($"[RoomPathGenerator] Boss room size {roomPrefab.size} is too large for board size {boardSize} with edge distance {minBossRoomEdgeDistance}! " +
+                                     $"Either: 1) Reduce boss room size, 2) Reduce minBossRoomEdgeDistance, or 3) Increase boardSize to at least {requiredBoardSize}");
+                        break;
+                    }
+
+                    // Calculate center of the board
+                    int centerX = boardSize / 2;
+                    int centerY = boardSize / 2;
+
+                    // Define a search radius around center (adjust this value to control how close to center)
+                    int searchRadius = boardSize / 6; // Boss room will be within 1/6 of board size from center
+
+                    // Try to place near center first
+                    pos = new Vector2Int(
+                        Mathf.Clamp(centerX - roomPrefab.size.x / 2 + Random.Range(-searchRadius, searchRadius), minPos, maxPosX),
+                        Mathf.Clamp(centerY - roomPrefab.size.y / 2 + Random.Range(-searchRadius, searchRadius), minPos, maxPosY)
+                    );
+
+                    if (CanPlaceBossRoom(pos, roomPrefab.size, minBossRoomEdgeDistance))
+                    {
+                        PlaceRoom(roomPrefab, pos);
+                        guaranteedRoomsPlaced.Add(roomPrefab);
+                        placed = true;
+                        Debug.Log($"[RoomPathGenerator] Boss room placed at {pos} (near center)");
+                        break;
+                    }
+                }
+                else
+                {
+                    // Normal guaranteed room (existing logic)
+                    pos = new Vector2Int(
+                        Random.Range(0, boardSize - roomPrefab.size.x),
+                        Random.Range(0, boardSize - roomPrefab.size.y)
+                    );
+
+                    if (CanPlaceRoom(pos, roomPrefab.size))
+                    {
+                        PlaceRoom(roomPrefab, pos);
+                        guaranteedRoomsPlaced.Add(roomPrefab);
+                        placed = true;
+                        break;
+                    }
                 }
             }
 
             if (!placed)
             {
-                Debug.LogWarning($"[RoomPathGenerator] Failed to place guaranteed room of size {roomPrefab.size} after 100 attempts!");
+                string roomType = roomPrefab.isBossRoom ? "boss room" : "guaranteed room";
+                Debug.LogWarning($"[RoomPathGenerator] Failed to place {roomType}!");
             }
         }
 
@@ -438,7 +524,16 @@ public class RoomPathGenerator : MonoBehaviour
         }
         
         placedRooms.Add(new PlacedRoom(position, roomPrefab.size, instance, 
-            roomPrefab.singleConnectionOnly, roomPrefab.connectToEdge, roomPrefab.edgeDirection));
+        roomPrefab.singleConnectionOnly, roomPrefab.connectToEdge, roomPrefab.edgeDirection));
+        placedRooms.Add(new PlacedRoom(
+            position,
+            roomPrefab.size,
+            instance,
+            roomPrefab.singleConnectionOnly,
+            roomPrefab.connectToEdge,
+            roomPrefab.edgeDirection,
+            roomPrefab.isBossRoom  // NEW: Pass boss room flag
+        ));
     }
 
     private Vector2Int GetClosestEdgePoint(PlacedRoom room, Vector2Int target)
@@ -853,7 +948,7 @@ public class RoomPathGenerator : MonoBehaviour
     public void GenerateWithSeed(int newSeed = 0)
     {
         float startTime = Time.realtimeSinceStartup;
-
+        //MinimapTextureGenerator miniMap = FindAnyObjectByType<MinimapTextureGenerator>();
         ClearExistingObjects();
 
         if (newSeed != 0)
@@ -891,6 +986,9 @@ public class RoomPathGenerator : MonoBehaviour
         BuildSpatialGrid();
         ClearAllDots();
 
+        //miniMap.GetMapTexture();
+        OnGenerationComplete();
+        
         lastGenerationStats.generationTime = Time.realtimeSinceStartup - startTime;
 
         Debug.Log($"[RoomPathGenerator] Generation complete: {lastGenerationStats}");
@@ -980,9 +1078,39 @@ public class RoomPathGenerator : MonoBehaviour
             Gizmos.DrawLine(new Vector3(min.x, 0, max.z), new Vector3(max.x, 0, min.z));
         }
     }
+    private void OnGenerationComplete()
+    {
+        AgentManager agentManager = FindAnyObjectByType<AgentManager>();
+        Room[] allRooms = FindObjectsByType<Room>(FindObjectsSortMode.None);
+
+        // First, let all rooms check for intersecting walls
+        foreach (Room room in allRooms)
+        {
+            room.CheckAndRemoveIntersectingWalls();
+        }
+
+        // Then initialize agents
+        agentManager.InitializeAgents();
+
+        // Then update culling state for all rooms
+        foreach (Room room in allRooms)
+        {
+            room.UpdateCullingState();
+        }
+    }
 
     public float GetActiveRadius()
     {
         return activeRadius;
+    }
+
+    public float GetTileSize()
+    {
+        return tileSize;
+    }
+
+    public int GetBoardSize()
+    {
+        return boardSize;
     }
 }

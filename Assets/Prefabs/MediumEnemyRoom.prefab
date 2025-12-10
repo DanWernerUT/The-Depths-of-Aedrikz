@@ -3521,6 +3521,10 @@ MonoBehaviour:
   - {fileID: 3953160362515295640}
   - {fileID: 7705224021546737153}
   detectionRadius: 0.5
+  player: {fileID: 0}
+  pathGenerator: {fileID: 0}
+  activeRadius: 0
+  updateInterval: 0
 --- !u!1 &5176936052333601745
 GameObject:
   m_ObjectHideFlags: 0

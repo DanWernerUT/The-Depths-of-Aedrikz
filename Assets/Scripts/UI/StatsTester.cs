@@ -3,7 +3,8 @@ using UnityEngine.UI;
 
 public class PlayerStatsTester : MonoBehaviour
 {
-    public PlayerStats player;
+    public ManaScript player;
+    public HealthScript health;
     public Button resetHealthBtn;
     public Button resetManaBtn;
     public Button loseHealthBtn;
@@ -13,10 +14,10 @@ public class PlayerStatsTester : MonoBehaviour
 
     void Start()
     {
-        resetHealthBtn.onClick.AddListener(player.ResetHealth);
+        resetHealthBtn.onClick.AddListener(health.ResetHealth);
+        loseHealthBtn.onClick.AddListener(() => health.LoseHealth(10f));
+        gainHealthBtn.onClick.AddListener(() => health.GainHealth(10f));
         resetManaBtn.onClick.AddListener(player.ResetMana);
-        loseHealthBtn.onClick.AddListener(() => player.LoseHealth(10f));
-        gainHealthBtn.onClick.AddListener(() => player.GainHealth(10f));
         spendManaBtn.onClick.AddListener(() => player.SpendMana(10f));
         gainManaBtn.onClick.AddListener(() => player.GainMana(10f));
     }

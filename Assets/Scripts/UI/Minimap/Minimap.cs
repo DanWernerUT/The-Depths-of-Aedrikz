@@ -29,7 +29,7 @@ public class Minimap : MonoBehaviour
         Vector3 pos = player.position;
         pos.y += height;
         transform.position = pos;
-        transform.rotation = Quaternion.Euler(rotation, player.eulerAngles.y+180, 0f);
+        transform.rotation = Quaternion.Euler(rotation, player.eulerAngles.y + 180, 0f);
 
         if (Input.GetKeyDown(KeyCode.M))
         {
